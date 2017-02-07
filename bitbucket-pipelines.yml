@@ -1,0 +1,30 @@
+# This is a sample build configuration for Ruby.
+# Check our guides at https://confluence.atlassian.com/x/VYk8Lw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: ruby:2.3.0
+
+pipelines:
+  default:
+    - step:
+        script: # Modify the commands below to build your repository.
+          - bundler --version
+          - bundle install
+          # Install Google Cloud SDK
+          - export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+          # Google Cloud SDK is pinned for build reliability. Bump if the SDK complains about deprecation.
+          - SDK_VERSION=127.0.0
+          - SDK_FILENAME=google-cloud-sdk-${SDK_VERSION}-linux-x86_64.tar.gz
+          - curl -O -J https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/${SDK_FILENAME}
+          - tar -zxvf ${SDK_FILENAME} --directory ${HOME}
+          - export PATH=${PATH}:${HOME}/google-cloud-sdk/bin
+          # Install Google App Engine SDK
+          - GAE_RUBYPATH=${HOME}/google_appengine
+          - export RUBYPATH=${RUBYPATH}:${GAE_RUBYPATH}
+          - echo "${PYTHONPATH}" && ls ${GAE_PYTHONPATH}
+          # Install app & dev dependencies, test, deploy, test deployment
+          - echo ${GOOGLE_CLIENT_SECRET} > client-secret.json
+          - gcloud auth activate-service-account --key-file client-secret.json
+          - gcloud --quiet --verbosity=error app deploy app.yaml --promote
+        
